@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import os
-import pprint
 from influxdb import InfluxDBClient
 import datetime
 import dateutil.parser
-
+import io
 import matplotlib
 import numpy as np
+
+from flask import (
+    request, jsonify, current_app, Response, send_from_directory,
+    after_this_request,
+    Blueprint
+)
 
 matplotlib.use("Agg")
 
@@ -16,7 +20,6 @@ import matplotlib.dates as mdates
 from pandas.plotting import register_matplotlib_converters
 register_matplotlib_converters()
 from matplotlib.font_manager import FontProperties
-
 
 INFLUXDB_ADDR = '192.168.0.10'
 INFLUXDB_PORT = 8086
@@ -29,6 +32,10 @@ SELECT mean("ph"),mean("tds"),mean("do"),mean("flow") FROM "sensor.raspberrypi" 
 FONT_REGULAR_PATH = 'font/OptimaLTStd-Medium.otf'
 FONT_BOLD_PATH = 'font/OptimaLTStd-Bold.otf'
 IMAGE_DPI = 100.0
+
+APP_PATH = '/aqua-monitor'
+
+aqua_monitor = Blueprint('aqua-monitor', __name__, url_prefix=APP_PATH)
 
 
 def fetch_data():
@@ -60,6 +67,7 @@ def plot_font():
         'axis': FontProperties(fname=FONT_REGULAR_PATH, size=14),
     }
 
+
 def plot_data(ax, font, title, x, y, ylabel, ylim, fmt, xaxis_visible=False):
     ax.set_title(title, fontproperties=font['title'])
     ax.set_ylim(ylim)
@@ -81,7 +89,8 @@ def plot_data(ax, font, title, x, y, ylabel, ylim, fmt, xaxis_visible=False):
         label.set_font_properties(font['axis'])
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%-m/%-d\n%-H:%M'))
 
-def create_plot(image_path, data):
+
+def create_plot(data):
     PLOT_CONFIG = [
         { 'title':'pH',
           'param': 'ph',
@@ -122,8 +131,18 @@ def create_plot(image_path, data):
         plot_data(ax, font,
                   PLOT_CONFIG[i]['title'], data['time'], data[PLOT_CONFIG[i]['param']],
                   PLOT_CONFIG[i]['unit'], PLOT_CONFIG[i]['ylim'], PLOT_CONFIG[i]['fmt'])
-        
-    plt.savefig(image_path, dpi=IMAGE_DPI)
 
-if __name__ == '__main__':
-    create_plot('aqua_monitor.png', fetch_data())
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png', dpi=IMAGE_DPI)
+    png_data = buf.getvalue()
+    buf.close()
+
+    return png_data
+
+
+@aqua_monitor.route('/', methods=['GET'])
+def api_event():
+    res = Response(create_plot(fetch_data()), mimetype='image/png')
+    res.headers.add('Cache-Control', 'no-cache')
+
+    return res
