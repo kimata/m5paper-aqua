@@ -73,14 +73,13 @@ def plot_data(ax, font, title, x, y, ylabel, ylim, fmt, xaxis_visible=False):
     ax.set_ylim(ylim)
     ax.set_xlim([x[-1], x[0] + datetime.timedelta(hours=1.5)])
 
-    ax.plot(x, y, '.', color='#666666', markersize=10,  linewidth = 3.0,
-             markerfacecolor='#ffffff',
-             markeredgewidth=3,
-             markeredgecolor='#666666',
-             linestyle='solid',             marker="o", markevery=[0])
-    ax.axes.xaxis.set_visible(xaxis_visible)
-    ax.text(0.98,0.05, fmt.format(y[0]),
-             transform=ax.transAxes, horizontalalignment="right",
+    ax.plot(x, y, '.', color='#666666',
+            marker='o', markevery=[0],
+            markersize=10, markerfacecolor='#ffffff', markeredgewidth=3, markeredgecolor='#666666',
+            linewidth=3.0, linestyle='solid')
+
+    ax.text(0.98, 0.05, fmt.format(y[0]),
+             transform=ax.transAxes, horizontalalignment='right',
              color='#cccccc', zorder=0,
              fontproperties=font['value']
     )
@@ -88,6 +87,12 @@ def plot_data(ax, font, title, x, y, ylabel, ylim, fmt, xaxis_visible=False):
     for label in (ax.get_yticklabels() + ax.get_xticklabels() ):
         label.set_font_properties(font['axis'])
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%-m/%-d\n%-H:%M'))
+    ax.grid(axis='x', color='#000000', alpha=0.1,
+            linestyle='-', linewidth=1)
+
+    # ax.axes.xaxis.set_visible(xaxis_visible)
+    if not xaxis_visible:
+        ax.set_xticklabels([])
 
 
 def create_plot(data):
@@ -119,23 +124,33 @@ def create_plot(data):
     ]
 
     plt.style.use('grayscale')
+    plt.subplots_adjust(hspace=0.35)
+
+    if (data['ph'][0] is None) or (data['tds'][0] is None) or (data['do'][0] is None) or \
+       (data['flow'][0] is None):
+        pprint.pprint(data)
 
     font = plot_font()
 
     fig = plt.figure(1)
     fig.set_size_inches(540/IMAGE_DPI, 960/IMAGE_DPI)
-    fig.suptitle("Aquarium monitor", fontproperties=font['sup_title'])
+    fig.suptitle('Aquarium monitor', fontproperties=font['sup_title'])
 
     for i in range(0, 4):
         ax = fig.add_subplot(4, 1, i+1)
         plot_data(ax, font,
                   PLOT_CONFIG[i]['title'], data['time'], data[PLOT_CONFIG[i]['param']],
-                  PLOT_CONFIG[i]['unit'], PLOT_CONFIG[i]['ylim'], PLOT_CONFIG[i]['fmt'])
+                  PLOT_CONFIG[i]['unit'], PLOT_CONFIG[i]['ylim'], PLOT_CONFIG[i]['fmt'],
+                  i == 3
+        )
 
     buf = io.BytesIO()
     plt.savefig(buf, format='png', dpi=IMAGE_DPI)
     png_data = buf.getvalue()
     buf.close()
+
+    plt.clf()
+    plt.close(fig)
 
     return png_data
 
