@@ -26,7 +26,7 @@ INFLUXDB_PORT = 8086
 INFLUXDB_DB = 'sensor'
 
 INFLUXDB_QUERY = """
-SELECT mean("ph"),mean("tds"),mean("do"),mean("flow") FROM "sensor.raspberrypi" WHERE ("hostname" = \'rasp-aqua\') AND time >= now() - 3d GROUP BY time(5m) fill(previous) ORDER by time desc
+SELECT mean("temp"),mean("ph"),mean("tds"),mean("do"),mean("flow") FROM "sensor.raspberrypi" WHERE ("hostname" = \'rasp-aqua\') AND time >= now() - 3d GROUP BY time(5m) fill(previous) ORDER by time desc
 """
 
 FONT_REGULAR_PATH = 'font/OptimaLTStd-Medium.otf'
@@ -42,15 +42,26 @@ def fetch_data():
     client = InfluxDBClient(host=INFLUXDB_ADDR, port=INFLUXDB_PORT, database=INFLUXDB_DB)
     result = client.query(INFLUXDB_QUERY)
 
-    ph = list(map(lambda x: x['mean'], result.get_points()))
-    tds = list(map(lambda x: x['mean_1'], result.get_points()))
-    do = list(map(lambda x: x['mean_2'], result.get_points()))
-    flow = list(map(lambda x: x['mean_3'], result.get_points()))
+    temp = list(map(lambda x: x['mean'], result.get_points()))
+    ph = list(map(lambda x: x['mean_1'], result.get_points()))
+    tds = list(map(lambda x: x['mean_2'], result.get_points()))
+    do = list(map(lambda x: x['mean_3'], result.get_points()))
+    flow = list(map(lambda x: x['mean_4'], result.get_points()))
 
     localtime_offset = datetime.timedelta(hours=9)
     time = list(map(lambda x: dateutil.parser.parse(x['time'])+localtime_offset, result.get_points()))
 
+    if (temp[0] is None) or (ph[0] is None) or (tds[0] is None) or \
+       (do[0] is None) or (flow[0] is None):
+        del temp[-1]
+        del ph[-1]
+        del tds[-1]
+        del do[-1]
+        del flow[-1]
+        del time[-1]
+
     return {
+        'temp': temp,
         'ph': ph,
         'tds': tds,
         'do': do,
@@ -71,22 +82,23 @@ def plot_font():
 def plot_data(ax, font, title, x, y, ylabel, ylim, fmt, xaxis_visible=False):
     ax.set_title(title, fontproperties=font['title'])
     ax.set_ylim(ylim)
-    ax.set_xlim([x[-1], x[0] + datetime.timedelta(hours=1.5)])
+    ax.set_xlim([x[-1], x[0] + datetime.timedelta(hours=1)])
 
-    ax.plot(x, y, '.', color='#666666',
+    ax.plot(x, y, '.', color='#AAAAAA',
             marker='o', markevery=[0],
-            markersize=10, markerfacecolor='#ffffff', markeredgewidth=3, markeredgecolor='#666666',
+            markersize=5, markerfacecolor='#cccccc', markeredgewidth=3, markeredgecolor='#999999',
             linewidth=3.0, linestyle='solid')
 
     ax.text(0.98, 0.05, fmt.format(y[0]),
              transform=ax.transAxes, horizontalalignment='right',
-             color='#cccccc', zorder=0,
+             color='#000000', alpha=0.8,
              fontproperties=font['value']
     )
     ax.set_ylabel(ylabel)
     for label in (ax.get_yticklabels() + ax.get_xticklabels() ):
         label.set_font_properties(font['axis'])
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%-m/%-d\n%-H:%M'))
+
     ax.grid(axis='x', color='#000000', alpha=0.1,
             linestyle='-', linewidth=1)
 
@@ -97,6 +109,12 @@ def plot_data(ax, font, title, x, y, ylabel, ylim, fmt, xaxis_visible=False):
 
 def create_plot(data):
     PLOT_CONFIG = [
+        { 'title':'Temperature',
+          'param': 'temp',
+          'unit': 'pH',
+          'ylim': [23, 26],
+          'fmt': '{:.1f}'
+        },
         { 'title':'pH',
           'param': 'ph',
           'unit': 'pH',
@@ -112,7 +130,7 @@ def create_plot(data):
         { 'title':'Dissolved Oxygen',
           'param': 'do',
           'unit': 'mg/L',
-          'ylim': [3, 7],
+          'ylim': [3, 8],
           'fmt': '{:.1f}'
         },
         { 'title':'Water flow',
@@ -126,22 +144,18 @@ def create_plot(data):
     plt.style.use('grayscale')
     plt.subplots_adjust(hspace=0.35)
 
-    if (data['ph'][0] is None) or (data['tds'][0] is None) or (data['do'][0] is None) or \
-       (data['flow'][0] is None):
-        pprint.pprint(data)
-
     font = plot_font()
 
     fig = plt.figure(1)
     fig.set_size_inches(540/IMAGE_DPI, 960/IMAGE_DPI)
     fig.suptitle('Aquarium monitor', fontproperties=font['sup_title'])
 
-    for i in range(0, 4):
-        ax = fig.add_subplot(4, 1, i+1)
+    for i in range(0, len(PLOT_CONFIG)):
+        ax = fig.add_subplot(len(PLOT_CONFIG), 1, i+1)
         plot_data(ax, font,
                   PLOT_CONFIG[i]['title'], data['time'], data[PLOT_CONFIG[i]['param']],
                   PLOT_CONFIG[i]['unit'], PLOT_CONFIG[i]['ylim'], PLOT_CONFIG[i]['fmt'],
-                  i == 3
+                  i == (len(PLOT_CONFIG)-1)
         )
 
     buf = io.BytesIO()
