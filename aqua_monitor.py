@@ -51,6 +51,8 @@ def fetch_data():
     localtime_offset = datetime.timedelta(hours=9)
     time = list(map(lambda x: dateutil.parser.parse(x['time'])+localtime_offset, result.get_points()))
 
+    # NOTE: fill(previous) してても，タイミングによって先頭が None になることが
+    # あるので，その場合は最初の要素を一律削除する．
     if (temp[0] is None) or (ph[0] is None) or (tds[0] is None) or \
        (do[0] is None) or (flow[0] is None):
         del temp[-1]
