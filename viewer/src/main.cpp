@@ -6,6 +6,8 @@
 
 #include "wifi_config.h"
 
+#define IMAGE_URL "http://192.168.0.10:5555/aqua-monitor/raw4"
+
 M5EPD_Canvas canvas(&M5.EPD);
 
 static const int DISP_WIDTH = 540;
@@ -76,7 +78,7 @@ void setup() {
 void loop() {
     log_i("DISPLAY Update");
     canvas.createCanvas(540, 960);
-    drawRaw4("http://192.168.0.10:5555/aqua-monitor/raw4");
+    drawRaw4(IMAGE_URL);
     canvas.pushCanvas(0, 0, UPDATE_MODE_GC16);
     delay(10 * 60 * 1000);
 }
