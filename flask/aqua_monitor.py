@@ -55,12 +55,12 @@ def fetch_data():
     # あるので，その場合は最初の要素を一律削除する．
     if (temp[0] is None) or (ph[0] is None) or (tds[0] is None) or \
        (do[0] is None) or (flow[0] is None):
-        del temp[-1]
-        del ph[-1]
-        del tds[-1]
-        del do[-1]
-        del flow[-1]
-        del time[-1]
+        del temp[0]
+        del ph[0]
+        del tds[0]
+        del do[0]
+        del flow[0]
+        del time[0]
 
     return {
         'temp': temp,
