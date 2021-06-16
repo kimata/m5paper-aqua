@@ -80,10 +80,11 @@ def plot_font():
         'title': FontProperties(fname=FONT_REGULAR_PATH, size=18),
         'value': FontProperties(fname=FONT_BOLD_PATH, size=60),
         'axis': FontProperties(fname=FONT_REGULAR_PATH, size=14),
+        'date': FontProperties(fname=FONT_REGULAR_PATH, size=12),
     }
 
 
-def plot_data(ax, font, title, x, y, ylabel, ylim, fmt, xaxis_visible=False):
+def plot_data(fig, ax, font, title, x, y, ylabel, ylim, fmt, is_last=False):
     ax.set_title(title, fontproperties=font['title'])
     ax.set_ylim(ylim)
     ax.set_xlim([x[-1], x[0] + datetime.timedelta(hours=1)])
@@ -94,9 +95,9 @@ def plot_data(ax, font, title, x, y, ylabel, ylim, fmt, xaxis_visible=False):
             linewidth=3.0, linestyle='solid')
 
     ax.text(0.98, 0.05, fmt.format(y[0]),
-             transform=ax.transAxes, horizontalalignment='right',
-             color='#000000', alpha=0.8,
-             fontproperties=font['value']
+            transform=ax.transAxes, horizontalalignment='right',
+            color='#000000', alpha=0.9,
+            fontproperties=font['value']
     )
     ax.set_ylabel(ylabel)
     for label in (ax.get_yticklabels() + ax.get_xticklabels() ):
@@ -107,7 +108,12 @@ def plot_data(ax, font, title, x, y, ylabel, ylim, fmt, xaxis_visible=False):
             linestyle='-', linewidth=1)
 
     # ax.axes.xaxis.set_visible(xaxis_visible)
-    if not xaxis_visible:
+    if is_last:
+        ax_pos = ax.get_position()
+        fig.text(ax_pos.x1 - 0.17, ax_pos.y0 - 0.1,
+                 datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S"),
+                 fontproperties=font['date'])
+    else:
         ax.set_xticklabels([])
 
 
@@ -156,7 +162,7 @@ def create_plot(data):
 
     for i in range(0, len(PLOT_CONFIG)):
         ax = fig.add_subplot(len(PLOT_CONFIG), 1, i+1)
-        plot_data(ax, font,
+        plot_data(fig, ax, font,
                   PLOT_CONFIG[i]['title'], data['time'], data[PLOT_CONFIG[i]['param']],
                   PLOT_CONFIG[i]['unit'], PLOT_CONFIG[i]['ylim'], PLOT_CONFIG[i]['fmt'],
                   i == (len(PLOT_CONFIG)-1)
