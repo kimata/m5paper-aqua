@@ -1,7 +1,10 @@
+#pragma GCC optimize("O3")
+
 #include <Arduino.h>
 #include <HTTPClient.h>
 #include <M5EPD.h>
 #include <WiFi.h>
+#include <driver/gpio.h>
 #include <string.h>
 
 #include "wifi_config.h"
@@ -11,7 +14,10 @@
 M5EPD_Canvas canvas(&M5.EPD);
 
 static const int DISP_WIDTH = 540;
-static const int BUF_HEIGHT = 4;
+static const int DISP_HEIGHT = 960;
+static const int BUF_HEIGHT = 20;
+
+RTC_DATA_ATTR int draw_count = 0;
 
 int drawRaw4(const char *url) {
     int filled;
@@ -52,6 +58,9 @@ int drawRaw4(const char *url) {
             }
         }
     }
+    if (block != (DISP_HEIGHT / BUF_HEIGHT)) {
+        return -1;
+    }
 
     canvas.pushCanvas(0, 0, UPDATE_MODE_GC16);
 
@@ -61,24 +70,41 @@ int drawRaw4(const char *url) {
 }
 
 void setup() {
+    uint32_t i = 0;
     log_i("START");
 
     M5.begin(); // NOTE: この中で Serial.begin(115200) が実行される
     M5.EPD.SetRotation(90);
-    M5.EPD.Clear(true);
 
     log_i("CONNECT WiFi");
     WiFi.begin(WIFI_SSID, WIFI_PASS);
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
+
+        if (i++ == 60) {
+            log_e("Faile to connect WiFi");
+            delay(10);
+            esp_deep_sleep(1 * 60 * 1000 * 1000); // NOTE: 1分後に起きる
+        }
     }
     log_i("SETUP Done");
 }
 
 void loop() {
     log_i("DISPLAY Update");
+    if ((draw_count++ % 60) == 0) {
+        M5.EPD.Clear(true);
+    }
+
     canvas.createCanvas(540, 960);
-    drawRaw4(IMAGE_URL);
+    if (drawRaw4(IMAGE_URL) != 0) {
+        log_e("Failed to fetch image");
+        delay(10);
+        esp_deep_sleep(1 * 60 * 1000 * 1000); // NOTE: 1分後に起きる
+    }
     canvas.pushCanvas(0, 0, UPDATE_MODE_GC16);
-    delay(10 * 60 * 1000);
+
+    log_i("Go to sleep...(%d)", draw_count);
+    delay(10);
+    esp_deep_sleep(30 * 60 * 1000 * 1000); // NOTE: 30分後に起きる
 }

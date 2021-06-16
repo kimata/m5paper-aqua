@@ -1,9 +1,9 @@
 {
     "folders": [
-		{
-			"name": "m5paper-aqua-viewer",
-			"path": "."
-		}
-	],
+        {
+            "name": "m5paper-aqua-viewer",
+            "path": "."
+        }
+    ],
     "settings": {}
 }
