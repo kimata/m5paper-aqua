@@ -6,6 +6,8 @@ import dateutil.parser
 import io
 import matplotlib
 import numpy as np
+import struct
+import cv2
 
 from flask import (
     request, jsonify, current_app, Response, send_from_directory,
@@ -171,9 +173,31 @@ def create_plot(data):
     return png_data
 
 
+def png2raw4(png_data):
+    img = cv2.imdecode(np.frombuffer(png_data, np.uint8), cv2.IMREAD_GRAYSCALE)
+    h, w = img.shape
+    raw4_buf = []
+    for y in range(0, h):
+        for x in range(0, w, 2):
+            # NOTE: 輝度を反転した上で 4bit に変換し，隣接画素を 1Byte にパッキング
+            c = int((0xFF-img[y][x]) / 16) << 4 | int((0xFF-img[y][x+1]) / 16)
+            raw4_buf.append(c)
+
+    return struct.pack('B'*len(raw4_buf), *raw4_buf)
+
+
 @aqua_monitor.route('/', methods=['GET'])
-def api_event():
+@aqua_monitor.route('/png', methods=['GET'])
+def img_png():
     res = Response(create_plot(fetch_data()), mimetype='image/png')
+    res.headers.add('Cache-Control', 'no-cache')
+
+    return res
+
+
+@aqua_monitor.route('/raw4', methods=['GET'])
+def img_raw4():
+    res = Response(png2raw4(create_plot(fetch_data())), mimetype='application/octet-stream')
     res.headers.add('Cache-Control', 'no-cache')
 
     return res
