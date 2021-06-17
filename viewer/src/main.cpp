@@ -16,6 +16,7 @@ M5EPD_Canvas canvas(&M5.EPD);
 static const int DISP_WIDTH = 540;
 static const int DISP_HEIGHT = 960;
 static const int BUF_HEIGHT = 20;
+static const int BATTERY_VOL_MAX = 4230; // NOTE: 手持ちの個体での実測値
 
 RTC_DATA_ATTR int draw_count = 0;
 
@@ -73,10 +74,10 @@ int draw_battery() {
 
     if (vol < 3300) {
         vol = 3300;
-    } else if (vol > 4350) {
-        vol = 4350;
+    } else if (vol > BATTERY_VOL_MAX) {
+        vol = BATTERY_VOL_MAX;
     }
-    float rate = (float)(vol - 3300) / (float)(4350 - 3300);
+    float rate = (float)(vol - 3300) / (float)(BATTERY_VOL_MAX - 3300);
     if (rate <= 0.01) {
         rate = 0.01;
     }
