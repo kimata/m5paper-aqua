@@ -19,7 +19,7 @@ static const int BUF_HEIGHT = 20;
 
 RTC_DATA_ATTR int draw_count = 0;
 
-int drawRaw4(const char *url) {
+int draw_raw4(const char *url) {
     int filled;
     int len;
     int block;
@@ -62,11 +62,45 @@ int drawRaw4(const char *url) {
         return -1;
     }
 
-    canvas.pushCanvas(0, 0, UPDATE_MODE_GC16);
-
     http.end();
 
     return 0;
+}
+
+int draw_battery() {
+    char buf[32];
+    uint32_t vol = M5.getBatteryVoltage();
+
+    if (vol < 3300) {
+        vol = 3300;
+    } else if (vol > 4350) {
+        vol = 4350;
+    }
+    float rate = (float)(vol - 3300) / (float)(4350 - 3300);
+    if (rate <= 0.01) {
+        rate = 0.01;
+    }
+    if (rate > 1) {
+        rate = 1;
+    }
+
+    snprintf(buf, sizeof(buf), "%.2fV (%d%%)", vol / 1000.0, (int)(rate * 100));
+    canvas.setTextSize(1);
+    canvas.drawString(buf, 5, 945);
+
+    return 0;
+}
+
+void goto_sleep(int sleeping_sec) {
+    delay(20);
+    M5.disableEPDPower();
+    M5.disableEXTPower();
+    // NOTE: shutdown は USB
+    // ケーブルが繋がっていると動かず，デバッグしにくいので 使わない．
+    esp_deep_sleep(sleeping_sec * 1000 * 1000);
+
+    while (true) {
+    }
 }
 
 void setup() {
@@ -74,37 +108,40 @@ void setup() {
     log_i("START");
 
     M5.begin(); // NOTE: この中で Serial.begin(115200) が実行される
+    M5.enableEPDPower();
     M5.EPD.SetRotation(90);
 
     log_i("CONNECT WiFi");
     WiFi.begin(WIFI_SSID, WIFI_PASS);
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
-
         if (i++ == 60) {
             log_e("Faile to connect WiFi");
-            delay(10);
-            esp_deep_sleep(1 * 60 * 1000 * 1000); // NOTE: 1分後に起きる
+            goto_sleep(1);
         }
     }
     log_i("SETUP Done");
 }
 
 void loop() {
-    log_i("DISPLAY Update");
-    if ((draw_count++ % 60) == 0) {
-        M5.EPD.Clear(true);
-    }
+    log_i("Updating...");
 
     canvas.createCanvas(540, 960);
-    if (drawRaw4(IMAGE_URL) != 0) {
-        log_e("Failed to fetch image");
-        delay(10);
-        esp_deep_sleep(1 * 60 * 1000 * 1000); // NOTE: 1分後に起きる
-    }
-    canvas.pushCanvas(0, 0, UPDATE_MODE_GC16);
 
-    log_i("Go to sleep...(%d)", draw_count);
-    delay(10);
-    esp_deep_sleep(30 * 60 * 1000 * 1000); // NOTE: 30分後に起きる
+    log_i("Fetch image");
+    if (draw_raw4(IMAGE_URL) != 0) {
+        log_e("Failed to fetch image");
+        goto_sleep(1);
+    }
+    draw_battery();
+
+    log_i("Update display");
+    M5.EPD.Clear(true);
+
+    canvas.pushCanvas(0, 0, UPDATE_MODE_GC16);
+    delay(500); // NOTE: wait for update (UPDATE_MODE_GC16 requires 450ms)
+
+    log_i("Go to sleep ...(%d)", draw_count++);
+
+    goto_sleep(10 * 60);
 }
