@@ -180,6 +180,7 @@ def create_plot(data):
 
 
 def png2raw4(png_data):
+    # NOTE: 力業...
     img = cv2.imdecode(np.frombuffer(png_data, np.uint8), cv2.IMREAD_GRAYSCALE)
     h, w = img.shape
     raw4_buf = []
