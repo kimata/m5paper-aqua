@@ -121,7 +121,7 @@ def create_plot(data):
     PLOT_CONFIG = [
         { 'title':'Temperature',
           'param': 'temp',
-          'unit': 'pH',
+          'unit': 'Celsius',
           'ylim': [23, 26],
           'fmt': '{:.1f}'
         },
