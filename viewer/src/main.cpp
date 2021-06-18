@@ -96,8 +96,9 @@ void goto_sleep(int sleeping_sec) {
     delay(20);
     M5.disableEPDPower();
     M5.disableEXTPower();
-    // NOTE: shutdown は USB
-    // ケーブルが繋がっていると動かず，デバッグしにくいので 使わない．
+    // NOTE: shutdown は USBa ケーブルが繋がっていると動かず，
+    // デバッグしにくいので使わない．
+    gpio_hold_en((gpio_num_t)M5EPD_MAIN_PWR_PIN);
     esp_deep_sleep(sleeping_sec * 1000 * 1000);
 
     while (true) {
