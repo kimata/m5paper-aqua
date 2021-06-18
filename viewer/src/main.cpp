@@ -62,6 +62,7 @@ int draw_raw4(const char *url) {
     http.end();
 
     if (block != (DISP_HEIGHT / BUF_HEIGHT)) {
+        log_e("Size unmatch (blocl, filled) = (%d, %d)", block, filled);
         return -1;
     }
 
