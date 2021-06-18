@@ -73,12 +73,12 @@ int draw_battery() {
     char buf[32];
     uint32_t vol = M5.getBatteryVoltage();
 
-    if (vol < 3300) {
-        vol = 3300;
+    if (vol < 3200) {
+        vol = 3200;
     } else if (vol > BATTERY_VOL_MAX) {
         vol = BATTERY_VOL_MAX;
     }
-    float rate = (float)(vol - 3300) / (float)(BATTERY_VOL_MAX - 3300);
+    float rate = (float)(vol - 3200) / (BATTERY_VOL_MAX - 3200);
     if (rate <= 0.01) {
         rate = 0.01;
     }
