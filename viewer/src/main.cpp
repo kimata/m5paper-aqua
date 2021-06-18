@@ -59,11 +59,11 @@ int draw_raw4(const char *url) {
             }
         }
     }
+    http.end();
+
     if (block != (DISP_HEIGHT / BUF_HEIGHT)) {
         return -1;
     }
-
-    http.end();
 
     return 0;
 }
