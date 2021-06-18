@@ -95,6 +95,9 @@ int draw_battery() {
 
 void goto_sleep(int sleeping_sec) {
     delay(20);
+    if (WiFi.isConnected()) {
+        WiFi.disconnect();
+    }
     M5.disableEPDPower();
     M5.disableEXTPower();
     // NOTE: shutdown は USBa ケーブルが繋がっていると動かず，
