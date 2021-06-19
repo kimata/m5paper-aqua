@@ -41,37 +41,35 @@ aqua_monitor = Blueprint('aqua-monitor', __name__, url_prefix=APP_PATH)
 
 
 def fetch_data():
+    VAL_DEF = {
+        'temp': 'mean',
+        'ph': 'mean_1',
+        'tds': 'mean_2',
+        'do': 'mean_3',
+        'flow': 'mean_4',
+    }
+    val_map = {}
+
     client = InfluxDBClient(host=INFLUXDB_ADDR, port=INFLUXDB_PORT, database=INFLUXDB_DB)
     result = client.query(INFLUXDB_QUERY)
 
-    temp = list(map(lambda x: x['mean'], result.get_points()))
-    ph = list(map(lambda x: x['mean_1'], result.get_points()))
-    tds = list(map(lambda x: x['mean_2'], result.get_points()))
-    do = list(map(lambda x: x['mean_3'], result.get_points()))
-    flow = list(map(lambda x: x['mean_4'], result.get_points()))
+    for k,v in VAL_DEF.items():
+        val_map[k] = list(map(lambda x: x[v], result.get_points()))
 
     localtime_offset = datetime.timedelta(hours=9)
-    time = list(map(lambda x: dateutil.parser.parse(x['time'])+localtime_offset, result.get_points()))
+    val_map['time'] = list(map(lambda x: dateutil.parser.parse(x['time'])+localtime_offset, result.get_points()))
 
     # NOTE: fill(previous) してても，タイミングによって先頭が None になることが
     # あるので，その場合は最初の要素を一律削除する．
-    if (temp[0] is None) or (ph[0] is None) or (tds[0] is None) or \
-       (do[0] is None) or (flow[0] is None):
-        del temp[0]
-        del ph[0]
-        del tds[0]
-        del do[0]
-        del flow[0]
-        del time[0]
+    is_none = False
+    for v in val_map.values():
+        if v[0] is None:
+            is_none = True
+    if is_none:
+        for v in val_map.values():
+            del v[0]
 
-    return {
-        'temp': temp,
-        'ph': ph,
-        'tds': tds,
-        'do': do,
-        'flow': flow,
-        'time': time,
-    }
+    return val_map
 
 
 def plot_font():
