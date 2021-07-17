@@ -28,7 +28,7 @@ INFLUXDB_PORT = 8086
 INFLUXDB_DB = 'sensor'
 
 INFLUXDB_QUERY = """
-SELECT mean("temp"),mean("ph"),mean("tds"),mean("do"),mean("flow") FROM "sensor.raspberrypi" WHERE ("hostname" = \'rasp-aqua\') AND time >= now() - 3d GROUP BY time(5m) fill(previous) ORDER by time desc
+SELECT mean("temp"),mean("ph"),mean("tds"),mean("do"),mean("flow") FROM "sensor.raspberrypi" WHERE ("hostname" = \'rasp-aqua\') AND time >= now() - 3d GROUP BY time(5m) fill(previous) ORDER by time asc
 """
 
 FONT_REGULAR_PATH = 'font/OptimaLTStd-Medium.otf'
@@ -59,16 +59,6 @@ def fetch_data():
     localtime_offset = datetime.timedelta(hours=9)
     val_map['time'] = list(map(lambda x: dateutil.parser.parse(x['time'])+localtime_offset, result.get_points()))
 
-    # NOTE: fill(previous) してても，タイミングによって先頭が None になることが
-    # あるので，その場合は最初の要素を一律削除する．
-    is_none = False
-    for v in val_map.values():
-        if v[0] is None:
-            is_none = True
-    if is_none:
-        for v in val_map.values():
-            del v[0]
-
     return val_map
 
 
@@ -85,14 +75,14 @@ def plot_font():
 def plot_data(fig, ax, font, title, x, y, ylabel, ylim, fmt, is_last=False):
     ax.set_title(title, fontproperties=font['title'])
     ax.set_ylim(ylim)
-    ax.set_xlim([x[-1], x[0] + datetime.timedelta(hours=1)])
+    ax.set_xlim([x[0], x[-1] + datetime.timedelta(hours=1)])
 
     ax.plot(x, y, '.', color='#AAAAAA',
-            marker='o', markevery=[0],
+            marker='o', markevery=[len(y)-1],
             markersize=5, markerfacecolor='#cccccc', markeredgewidth=3, markeredgecolor='#999999',
             linewidth=3.0, linestyle='solid')
 
-    ax.text(0.98, 0.05, fmt.format(y[0]),
+    ax.text(0.98, 0.05, fmt.format(y[-1]),
             transform=ax.transAxes, horizontalalignment='right',
             color='#000000', alpha=0.9,
             fontproperties=font['value']
