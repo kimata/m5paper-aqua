@@ -18,7 +18,7 @@ M5EPD_Canvas canvas(&M5.EPD);
 static const int DISP_WIDTH = 540;
 static const int DISP_HEIGHT = 960;
 static const int BUF_HEIGHT = 20;
-static const int BATTERY_VOL_MAX = 4230; // NOTE: 手持ちの個体での実測値
+static const int BATTERY_VOL_MAX = 4200; // NOTE: 手持ちの個体での実測値
 
 RTC_DATA_ATTR int draw_count = 0;
 
