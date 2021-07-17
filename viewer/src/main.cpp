@@ -94,7 +94,6 @@ int draw_battery() {
 }
 
 void goto_sleep(int sleeping_sec) {
-    delay(20);
     if (WiFi.isConnected()) {
         WiFi.disconnect();
     }
