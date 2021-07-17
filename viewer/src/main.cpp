@@ -178,5 +178,5 @@ void loop() {
 
     log_i("Go to sleep ...(%d)", draw_count++);
 
-    goto_sleep(10 * 60);
+    goto_sleep(30 * 60);
 }
