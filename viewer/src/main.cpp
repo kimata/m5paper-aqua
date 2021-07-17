@@ -10,6 +10,8 @@
 #include "wifi_config.h"
 
 #define IMAGE_URL "http://192.168.0.10:5555/aqua-monitor/raw4"
+#define NTP_SERVER "ntp.nict.jp"
+#define UTC_OFFSET (9 * 60 * 60)
 
 M5EPD_Canvas canvas(&M5.EPD);
 
@@ -19,6 +21,8 @@ static const int BUF_HEIGHT = 20;
 static const int BATTERY_VOL_MAX = 4230; // NOTE: 手持ちの個体での実測値
 
 RTC_DATA_ATTR int draw_count = 0;
+
+#define SHUTDOWN
 
 int draw_raw4(const char *url) {
     int filled;
@@ -97,15 +101,36 @@ void goto_sleep(int sleeping_sec) {
     if (WiFi.isConnected()) {
         WiFi.disconnect();
     }
+#ifdef SHUTDOWN
+    // NOTE: shutdown は USB ケーブルが繋がっていると動かない．
+    M5.shutdown(sleeping_sec);
+#endif
     M5.disableEPDPower();
     M5.disableEXTPower();
-    // NOTE: shutdown は USBa ケーブルが繋がっていると動かず，
-    // デバッグしにくいので使わない．
     gpio_hold_en((gpio_num_t)M5EPD_MAIN_PWR_PIN);
+    gpio_deep_sleep_hold_en();
     esp_deep_sleep(sleeping_sec * 1000 * 1000);
+}
 
-    while (true) {
-    }
+void setup_rtc() {
+    struct tm time_info;
+    rtc_time_t rtc_time;
+    rtc_date_t rtc_date;
+
+    log_i("Setup RTC");
+
+    configTime(UTC_OFFSET, 0, NTP_SERVER);
+    getLocalTime(&time_info);
+
+    rtc_time.hour = time_info.tm_hour;
+    rtc_time.min = time_info.tm_min;
+    rtc_time.sec = time_info.tm_sec;
+    M5.RTC.setTime(&rtc_time);
+
+    rtc_date.year = time_info.tm_year + 1900;
+    rtc_date.mon = time_info.tm_mon + 1;
+    rtc_date.day = time_info.tm_mday;
+    M5.RTC.setDate(&rtc_date);
 }
 
 void setup() {
@@ -113,8 +138,6 @@ void setup() {
     log_i("START");
 
     M5.begin(); // NOTE: この中で Serial.begin(115200) が実行される
-    M5.enableEPDPower();
-    M5.EPD.SetRotation(90);
 
     log_i("CONNECT WiFi");
     WiFi.begin(WIFI_SSID, WIFI_PASS);
@@ -125,11 +148,18 @@ void setup() {
             goto_sleep(1);
         }
     }
+    if ((draw_count % 100) == 0) {
+        setup_rtc();
+    }
+
     log_i("SETUP Done");
 }
 
 void loop() {
     log_i("Updating...");
+
+    M5.enableEPDPower();
+    M5.EPD.SetRotation(90);
 
     canvas.createCanvas(540, 960);
 
