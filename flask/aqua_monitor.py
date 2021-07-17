@@ -116,7 +116,7 @@ def create_plot(data):
         { 'title':'pH',
           'param': 'ph',
           'unit': 'pH',
-          'ylim': [6, 8],
+          'ylim': [5.5, 7.5],
           'fmt': '{:.1f}'
         },
         { 'title':'Total Dissolved Solids',
@@ -128,7 +128,7 @@ def create_plot(data):
         { 'title':'Dissolved Oxygen',
           'param': 'do',
           'unit': 'mg/L',
-          'ylim': [3, 8],
+          'ylim': [0, 6],
           'fmt': '{:.1f}'
         },
         { 'title':'Water flow',
