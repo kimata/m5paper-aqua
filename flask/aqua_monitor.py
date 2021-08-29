@@ -110,7 +110,7 @@ def create_plot(data):
         { 'title':'Temperature',
           'param': 'temp',
           'unit': 'Celsius',
-          'ylim': [23, 26],
+          'ylim': [23, 27],
           'fmt': '{:.1f}'
         },
         { 'title':'pH',
@@ -122,7 +122,7 @@ def create_plot(data):
         { 'title':'Total Dissolved Solids',
           'param': 'tds',
           'unit': 'ppm',
-          'ylim': [100, 400],
+          'ylim': [100, 700],
           'fmt': '{:.0f}'
         },
         { 'title':'Dissolved Oxygen',
