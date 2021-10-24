@@ -7,6 +7,8 @@ import io
 import matplotlib
 import numpy as np
 import struct
+import os
+import pathlib
 import cv2
 
 from flask import (
@@ -62,13 +64,20 @@ def fetch_data():
     return val_map
 
 
+def get_plot_font(path, size):
+    return FontProperties(
+        fname=str(pathlib.Path(os.path.dirname(__file__), path)),
+        size=size
+    )
+
+
 def plot_font():
     return {
-        'sup_title': FontProperties(fname=FONT_BOLD_PATH, size=30),
-        'title': FontProperties(fname=FONT_REGULAR_PATH, size=18),
-        'value': FontProperties(fname=FONT_BOLD_PATH, size=60),
-        'axis': FontProperties(fname=FONT_REGULAR_PATH, size=14),
-        'date': FontProperties(fname=FONT_REGULAR_PATH, size=12),
+        'sup_title': get_plot_font(FONT_BOLD_PATH, 30),
+        'title': get_plot_font(FONT_REGULAR_PATH, 24),
+        'value': get_plot_font(FONT_BOLD_PATH, 80),
+        'axis': get_plot_font(FONT_REGULAR_PATH, 14),
+        'date': get_plot_font(FONT_REGULAR_PATH, 12),
     }
 
 
@@ -77,9 +86,9 @@ def plot_data(fig, ax, font, title, x, y, ylabel, ylim, fmt, is_last=False):
     ax.set_ylim(ylim)
     ax.set_xlim([x[0], x[-1] + datetime.timedelta(hours=1)])
 
-    ax.plot(x, y, '.', color='#AAAAAA',
+    ax.plot(x, y, '.', color='#999999',
             marker='o', markevery=[len(y)-1],
-            markersize=5, markerfacecolor='#cccccc', markeredgewidth=3, markeredgecolor='#999999',
+            markersize=5, markerfacecolor='#cccccc', markeredgewidth=3, markeredgecolor='#666666',
             linewidth=3.0, linestyle='solid')
 
     ax.text(0.98, 0.05, fmt.format(y[-1]),
@@ -110,7 +119,7 @@ def create_plot(data):
         { 'title':'Temperature',
           'param': 'temp',
           'unit': 'Celsius',
-          'ylim': [23, 27],
+          'ylim': [23, 28],
           'fmt': '{:.1f}'
         },
         { 'title':'pH',
@@ -125,12 +134,12 @@ def create_plot(data):
           'ylim': [100, 700],
           'fmt': '{:.0f}'
         },
-        { 'title':'Dissolved Oxygen',
-          'param': 'do',
-          'unit': 'mg/L',
-          'ylim': [0, 6],
-          'fmt': '{:.1f}'
-        },
+        # { 'title':'Dissolved Oxygen',
+        #   'param': 'do',
+        #   'unit': 'mg/L',
+        #   'ylim': [0, 6],
+        #   'fmt': '{:.1f}'
+        # },
         { 'title':'Water flow',
           'param': 'flow',
           'unit': 'L/min',
