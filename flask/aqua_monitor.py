@@ -30,7 +30,7 @@ INFLUXDB_PORT = 8086
 INFLUXDB_DB = 'sensor'
 
 INFLUXDB_QUERY = """
-SELECT mean("temp"),mean("ph"),mean("tds"),mean("do"),mean("flow") FROM "sensor.raspberrypi" WHERE ("hostname" = \'rasp-aqua\') AND time >= now() - 3d GROUP BY time(5m) fill(previous) ORDER by time asc
+SELECT mean("temp"),mean("ph"),mean("tds"),mean("do"),mean("flow") FROM "sensor.raspberrypi" WHERE ("hostname" = \'rasp-aqua\') AND time >= now() - 7d GROUP BY time(5m) fill(previous) ORDER by time asc
 """
 
 FONT_REGULAR_PATH = 'font/OptimaLTStd-Medium.otf'
@@ -78,12 +78,14 @@ def plot_font():
         'value': get_plot_font(FONT_BOLD_PATH, 80),
         'axis': get_plot_font(FONT_REGULAR_PATH, 14),
         'date': get_plot_font(FONT_REGULAR_PATH, 12),
+        'alert': get_plot_font(FONT_BOLD_PATH, 140),
     }
 
 
-def plot_data(fig, ax, font, title, x, y, ylabel, ylim, fmt, is_last=False):
+def plot_data(fig, ax, font, title, x, y, ylabel, yticks, fmt, normal, is_last=False):
     ax.set_title(title, fontproperties=font['title'])
-    ax.set_ylim(ylim)
+    ax.set_ylim(yticks[0:2])
+    ax.set_yticks(np.arange(*yticks))
     ax.set_xlim([x[0], x[-1] + datetime.timedelta(hours=1)])
 
     ax.plot(x, y, '.', color='#999999',
@@ -96,22 +98,22 @@ def plot_data(fig, ax, font, title, x, y, ylabel, ylim, fmt, is_last=False):
             color='#000000', alpha=0.9,
             fontproperties=font['value']
     )
+
+    if (y[-1] < normal[0]) or (y[-1] > normal[1]):
+        ax.text(0.25, 0.05, '!',
+                transform=ax.transAxes, horizontalalignment='right',
+                color='#000000', alpha=0.9,
+                fontproperties=font['alert']
+        )
+
     ax.set_ylabel(ylabel)
     for label in (ax.get_yticklabels() + ax.get_xticklabels() ):
         label.set_font_properties(font['axis'])
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%-m/%-d\n%-H:%M'))
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%-m/%-d\n%a'))
 
     ax.grid(axis='x', color='#000000', alpha=0.1,
             linestyle='-', linewidth=1)
-
-    # ax.axes.xaxis.set_visible(xaxis_visible)
-    if is_last:
-        ax_pos = ax.get_position()
-        fig.text(ax_pos.x1 - 0.17, ax_pos.y0 - 0.1,
-                 datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S"),
-                 fontproperties=font['date'])
-    else:
-        ax.set_xticklabels([])
+    ax.label_outer()
 
 
 def create_plot(data):
@@ -119,31 +121,35 @@ def create_plot(data):
         { 'title':'Temperature',
           'param': 'temp',
           'unit': 'Celsius',
-          'ylim': [23, 28],
+          'yticks': [23, 28.1, 1],
+          'normal': [25.5, 27.5],
           'fmt': '{:.1f}'
         },
         { 'title':'pH',
           'param': 'ph',
           'unit': 'pH',
-          'ylim': [5.5, 7.5],
+          'yticks': [6.0, 7.6, 0.5],
+          'normal': [6.0, 7.2],
           'fmt': '{:.1f}'
         },
         { 'title':'Total Dissolved Solids',
           'param': 'tds',
           'unit': 'ppm',
-          'ylim': [100, 700],
+          'yticks': [100, 800, 200],
+          'normal': [100, 700],
           'fmt': '{:.0f}'
         },
         # { 'title':'Dissolved Oxygen',
         #   'param': 'do',
         #   'unit': 'mg/L',
-        #   'ylim': [0, 6],
+        #   'yticks': [0, 6, 1],
         #   'fmt': '{:.1f}'
         # },
         { 'title':'Water flow',
           'param': 'flow',
           'unit': 'L/min',
-          'ylim': [2, 5],
+          'yticks': [2, 5.1, 1],
+          'normal': [3, 10],
           'fmt': '{:.1f}'
         },
     ]
@@ -155,15 +161,18 @@ def create_plot(data):
 
     fig = plt.figure(1)
     fig.set_size_inches(540/IMAGE_DPI, 960/IMAGE_DPI)
-    fig.suptitle('Aquarium monitor', fontproperties=font['sup_title'])
 
     for i in range(0, len(PLOT_CONFIG)):
         ax = fig.add_subplot(len(PLOT_CONFIG), 1, i+1)
         plot_data(fig, ax, font,
                   PLOT_CONFIG[i]['title'], data['time'], data[PLOT_CONFIG[i]['param']],
-                  PLOT_CONFIG[i]['unit'], PLOT_CONFIG[i]['ylim'], PLOT_CONFIG[i]['fmt'],
+                  PLOT_CONFIG[i]['unit'], PLOT_CONFIG[i]['yticks'], PLOT_CONFIG[i]['fmt'],
+                  PLOT_CONFIG[i]['normal'],
                   i == (len(PLOT_CONFIG)-1)
         )
+
+    fig.tight_layout()
+    plt.subplots_adjust(hspace=0.3, wspace=0)
 
     buf = io.BytesIO()
     plt.savefig(buf, format='png', dpi=IMAGE_DPI)
