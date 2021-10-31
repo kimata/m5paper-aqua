@@ -135,7 +135,7 @@ def create_plot(data):
         { 'title':'Total Dissolved Solids',
           'param': 'tds',
           'unit': 'ppm',
-          'yticks': [100, 800, 200],
+          'yticks': [0, 500, 100],
           'normal': [50, 300],
           'fmt': '{:.0f}'
         },
