@@ -121,7 +121,7 @@ def create_plot(data):
         { 'title':'Temperature',
           'param': 'temp',
           'unit': 'Celsius',
-          'yticks': [23, 28.1, 1],
+          'yticks': [24, 28.1, 1],
           'normal': [25.5, 27.5],
           'fmt': '{:.1f}'
         },
@@ -136,7 +136,7 @@ def create_plot(data):
           'param': 'tds',
           'unit': 'ppm',
           'yticks': [100, 800, 200],
-          'normal': [100, 700],
+          'normal': [50, 300],
           'fmt': '{:.0f}'
         },
         # { 'title':'Dissolved Oxygen',
