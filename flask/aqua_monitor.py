@@ -10,6 +10,10 @@ import struct
 import os
 import pathlib
 import cv2
+import textwrap
+import PIL.Image
+import PIL.ImageDraw
+import PIL.ImageFont
 
 from flask import (
     request, jsonify, current_app, Response, send_from_directory,
@@ -24,6 +28,13 @@ import matplotlib.dates as mdates
 from pandas.plotting import register_matplotlib_converters
 register_matplotlib_converters()
 from matplotlib.font_manager import FontProperties
+
+PANEL = {
+    'SIZE': {
+        'WIDTH': 540,
+        'HEIGHT': 960,
+    },
+}
 
 INFLUXDB_ADDR = '192.168.0.10'
 INFLUXDB_PORT = 8086
@@ -82,6 +93,21 @@ def plot_font():
     }
 
 
+def get_pil_font(path,size):
+  font = PIL.ImageFont.truetype(
+      str(pathlib.Path(os.path.dirname(__file__), path)),
+      size
+  )
+  return font
+
+
+def pil_font():
+    return {
+        'title': get_pil_font(FONT_BOLD_PATH, 100),
+        'text': get_pil_font(FONT_REGULAR_PATH, 24),
+    }
+
+
 def plot_data(fig, ax, font, title, x, y, ylabel, yticks, fmt, normal, is_last=False):
     ax.set_title(title, fontproperties=font['title'])
     ax.set_ylim(yticks[0:2])
@@ -116,7 +142,7 @@ def plot_data(fig, ax, font, title, x, y, ylabel, yticks, fmt, normal, is_last=F
     ax.label_outer()
 
 
-def create_plot(data):
+def create_plot_impl(data):
     PLOT_CONFIG = [
         { 'title':'Temperature',
           'param': 'temp',
@@ -160,7 +186,7 @@ def create_plot(data):
     font = plot_font()
 
     fig = plt.figure(1)
-    fig.set_size_inches(540/IMAGE_DPI, 960/IMAGE_DPI)
+    fig.set_size_inches(PANEL['SIZE']['WIDTH']/IMAGE_DPI, PANEL['SIZE']['HEIGHT']/IMAGE_DPI)
 
     for i in range(0, len(PLOT_CONFIG)):
         ax = fig.add_subplot(len(PLOT_CONFIG), 1, i+1)
@@ -185,6 +211,46 @@ def create_plot(data):
     return png_data
 
 
+def draw_text(img, text, pos, face, align=True, color='#000'):
+  draw = PIL.ImageDraw.Draw(img)
+  font = pil_font()[face]
+  next_pos_y =  pos[1] + font.getsize(text)[1]
+
+  if align:
+    # 右寄せ
+    None
+  else:
+    # 左寄せ
+    pos = (pos[0]-font.getsize(text)[0], pos[1])
+    
+  draw.text(pos, text, color, font, None, font.getsize(text)[1]*0.4)
+  
+  return next_pos_y
+
+def create_error_msg(e):
+    import traceback
+
+    img = PIL.Image.new('L', (PANEL['SIZE']['WIDTH'], PANEL['SIZE']['HEIGHT']), '#FFF')
+
+    draw_text(img, 'ERROR', (20, 20), 'title')
+    draw_text(img,
+              '\n'.join(textwrap.wrap(traceback.format_exc(), 45)),
+              (20, 120), 'text')
+
+    bytes_io = io.BytesIO()
+    img.save(bytes_io, 'PNG')
+    bytes_io.seek(0)
+
+    return bytes_io.getvalue()
+
+
+def create_plot():
+    try:
+        return create_plot_impl(fetch_data())
+    except Exception as e:
+        return create_error_msg(e)
+
+
 def png2raw4(png_data):
     # NOTE: 力業...
     img = cv2.imdecode(np.frombuffer(png_data, np.uint8), cv2.IMREAD_GRAYSCALE)
@@ -202,7 +268,7 @@ def png2raw4(png_data):
 @aqua_monitor.route('/', methods=['GET'])
 @aqua_monitor.route('/png', methods=['GET'])
 def img_png():
-    res = Response(create_plot(fetch_data()), mimetype='image/png')
+    res = Response(create_plot(), mimetype='image/png')
     res.headers.add('Cache-Control', 'no-cache')
 
     return res
@@ -210,7 +276,7 @@ def img_png():
 
 @aqua_monitor.route('/raw4', methods=['GET'])
 def img_raw4():
-    res = Response(png2raw4(create_plot(fetch_data())), mimetype='application/octet-stream')
+    res = Response(png2raw4(create_plot()), mimetype='application/octet-stream')
     res.headers.add('Cache-Control', 'no-cache')
 
     return res
