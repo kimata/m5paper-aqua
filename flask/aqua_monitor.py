@@ -105,6 +105,7 @@ def pil_font():
     return {
         'title': get_pil_font(FONT_BOLD_PATH, 100),
         'text': get_pil_font(FONT_REGULAR_PATH, 24),
+        'date': get_pil_font(FONT_REGULAR_PATH, 12),
     }
 
 
@@ -246,9 +247,19 @@ def create_error_msg(e):
 
 def create_plot():
     try:
-        return create_plot_impl(fetch_data())
+        png_data = create_plot_impl(fetch_data())
     except Exception as e:
-        return create_error_msg(e)
+        png_data = create_error_msg(e)
+
+    img = PIL.Image.open(io.BytesIO(png_data))
+    date = datetime.datetime.now().strftime('%Y/%m/%d %H:%M')
+    draw_text(img, date, (450, 948), 'date', align=True, color='#333')
+
+    bytes_io = io.BytesIO()
+    img.save(bytes_io, 'PNG')
+    bytes_io.seek(0)
+
+    return bytes_io.getvalue()
 
 
 def png2raw4(png_data):
