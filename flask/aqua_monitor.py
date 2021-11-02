@@ -254,7 +254,7 @@ def create_plot():
 
     img = PIL.Image.open(io.BytesIO(png_data))
     date = datetime.datetime.now().strftime('%Y/%m/%d %H:%M')
-    draw_text(img, date, (450, 948), 'date', align=True, color='#333')
+    draw_text(img, date, (455, 948), 'date', align=True, color='#333')
 
     bytes_io = io.BytesIO()
     img.save(bytes_io, 'PNG')
