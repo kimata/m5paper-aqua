@@ -41,7 +41,7 @@ INFLUXDB_PORT = 8086
 INFLUXDB_DB = 'sensor'
 
 INFLUXDB_QUERY = """
-SELECT mean("temp"),mean("ph"),mean("tds"),mean("do"),mean("flow") FROM "sensor.raspberrypi" WHERE ("hostname" = \'rasp-aqua\') AND time >= now() - 7d GROUP BY time(5m) fill(previous) ORDER by time asc
+SELECT mean("temp"),mean("ph"),mean("tds"),mean("do"),mean("flow") FROM "sensor.raspberrypi" WHERE ("hostname" = \'rasp-aqua\') AND time >= now() - 2d GROUP BY time(30m) fill(previous) ORDER by time asc
 """
 
 FONT_REGULAR_PATH = 'font/OptimaLTStd-Medium.otf'
@@ -136,7 +136,8 @@ def plot_data(fig, ax, font, title, x, y, ylabel, yticks, fmt, normal, is_last=F
     ax.set_ylabel(ylabel)
     for label in (ax.get_yticklabels() + ax.get_xticklabels() ):
         label.set_font_properties(font['axis'])
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%-m/%-d\n%a'))
+    # ax.xaxis.set_major_formatter(mdates.DateFormatter('%-m/%-d\n%a'))
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%-m/%-d\n%-H:%M'))
 
     ax.grid(axis='x', color='#000000', alpha=0.1,
             linestyle='-', linewidth=1)
@@ -162,8 +163,8 @@ def create_plot_impl(data):
         { 'title':'Total Dissolved Solids',
           'param': 'tds',
           'unit': 'ppm',
-          'yticks': [0, 500, 100],
-          'normal': [50, 300],
+          'yticks': [300, 800, 100],
+          'normal': [100, 600],
           'fmt': '{:.0f}'
         },
         # { 'title':'Dissolved Oxygen',
@@ -175,7 +176,7 @@ def create_plot_impl(data):
         { 'title':'Water flow',
           'param': 'flow',
           'unit': 'L/min',
-          'yticks': [2, 5.1, 1],
+          'yticks': [2, 7.1, 1],
           'normal': [3, 10],
           'fmt': '{:.1f}'
         },
