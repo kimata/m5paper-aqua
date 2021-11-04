@@ -9,7 +9,8 @@
 
 #include "wifi_config.h"
 
-#define IMAGE_URL "http://192.168.0.10:5555/aqua-monitor/raw4"
+#define IMAGE_URL "http://192.168.0.18:5555/aqua-monitor/raw4"
+#define UPDATE_INTERVAL_SEC (60)
 #define NTP_SERVER "ntp.nict.jp"
 #define UTC_OFFSET (9 * 60 * 60)
 
@@ -22,7 +23,8 @@ static const int BATTERY_VOL_MAX = 4200; // NOTE: 手持ちの個体での実測
 
 RTC_DATA_ATTR int draw_count = 0;
 
-#define SHUTDOWN
+// NOTE: バッテリ駆動する場合は，次のコメントアウトを解除する
+// #define USE_BATTERY
 
 int draw_raw4(const char *url) {
     int filled;
@@ -31,6 +33,10 @@ int draw_raw4(const char *url) {
     uint8_t buf[DISP_WIDTH / 2 * BUF_HEIGHT];
 
     HTTPClient http;
+    // NOTE:
+    // 現状，raw4画像の生成を富豪的に行っており，サーバ側での処理に時間がかかるので
+    // 長めにしておく．
+    http.setTimeout(10 * 1000);
 
     http.begin(url);
     int httpCode = http.GET();
@@ -101,7 +107,7 @@ void goto_sleep(int sleeping_sec) {
     if (WiFi.isConnected()) {
         WiFi.disconnect();
     }
-#ifdef SHUTDOWN
+#ifdef USE_BATTERY
     // NOTE: shutdown は USB ケーブルが繋がっていると動かない．
     M5.shutdown(sleeping_sec);
 #endif
@@ -178,5 +184,5 @@ void loop() {
 
     log_i("Go to sleep ...(%d)", draw_count++);
 
-    goto_sleep(30 * 60);
+    goto_sleep(UPDATE_INTERVAL_SEC);
 }
