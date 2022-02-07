@@ -150,7 +150,7 @@ def create_plot_impl(data):
           'param': 'temp',
           'unit': 'Celsius',
           'yticks': [24, 28.1, 1],
-          'normal': [25.5, 27.5],
+          'normal': [25.0, 27.5],
           'fmt': '{:.1f}'
         },
         { 'title':'pH',
@@ -163,7 +163,7 @@ def create_plot_impl(data):
         { 'title':'Total Dissolved Solids',
           'param': 'tds',
           'unit': 'ppm',
-          'yticks': [300, 800, 100],
+          'yticks': [300, 410, 20],
           'normal': [100, 600],
           'fmt': '{:.0f}'
         },
@@ -176,7 +176,7 @@ def create_plot_impl(data):
         { 'title':'Water flow',
           'param': 'flow',
           'unit': 'L/min',
-          'yticks': [2, 7.1, 1],
+          'yticks': [0, 7.1, 1],
           'normal': [3, 10],
           'fmt': '{:.1f}'
         },
