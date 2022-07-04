@@ -157,7 +157,7 @@ def create_plot_impl(data):
           'param': 'ph',
           'unit': 'pH',
           'yticks': [6.0, 7.6, 0.5],
-          'normal': [6.0, 7.2],
+          'normal': [6.0, 7.5],
           'fmt': '{:.1f}'
         },
         { 'title':'Total Dissolved Solids',
