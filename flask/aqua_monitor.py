@@ -60,7 +60,7 @@ def fetch_data():
     query_api = client.query_api()
 
     query = """from(bucket: "sensor")
-        |> range(start: -120m)
+        |> range(start: -2d)
         |> filter(fn:(r) => r._measurement == "sensor.rasp")
         |> filter(fn: (r) => r.hostname == "rasp-aqua")
         |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)
