@@ -16,7 +16,12 @@ import PIL.ImageDraw
 import PIL.ImageFont
 
 from flask import (
+    request,
+    jsonify,
+    current_app,
     Response,
+    send_from_directory,
+    after_this_request,
     Blueprint,
 )
 
@@ -29,12 +34,7 @@ from pandas.plotting import register_matplotlib_converters
 register_matplotlib_converters()
 from matplotlib.font_manager import FontProperties
 
-PANEL = {
-    "SIZE": {
-        "WIDTH": 540,
-        "HEIGHT": 960,
-    },
-}
+PANEL = {"SIZE": {"WIDTH": 540, "HEIGHT": 960}}
 
 INFLUXDB_ADDR = "192.168.0.10"
 INFLUXDB_PORT = 8086
