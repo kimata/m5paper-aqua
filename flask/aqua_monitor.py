@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from influxdb import InfluxDBClient
+import influxdb_client
 import datetime
 import dateutil.parser
 import io
@@ -36,13 +36,9 @@ from matplotlib.font_manager import FontProperties
 
 PANEL = {"SIZE": {"WIDTH": 540, "HEIGHT": 960}}
 
-INFLUXDB_ADDR = "192.168.0.10"
-INFLUXDB_PORT = 8086
-INFLUXDB_DB = "sensor"
-
-INFLUXDB_QUERY = """
-SELECT mean("temp"),mean("ph"),mean("tds"),mean("do"),mean("flow") FROM "sensor.raspberrypi" WHERE ("hostname" = \'rasp-aqua\') AND time >= now() - 2d GROUP BY time(30m) fill(previous) ORDER by time asc
-"""
+INFLUXDB_URL = "http://tanzania.green-rabbit.net:8086"
+INFLUXDB_TOKEN = "CyKJaJX8Ze808NqDWOiB9-SwOyfmx8j13srUgBofBsU6EZIMvppbsYNTnTJ_umVyX3QVJomFYLkskTVikfvYiw=="
+INFLUXDB_ORG = "home"
 
 FONT_REGULAR_PATH = "font/OptimaLTStd-Medium.otf"
 FONT_BOLD_PATH = "font/OptimaLTStd-Bold.otf"
@@ -54,30 +50,34 @@ aqua_monitor = Blueprint("aqua-monitor", __name__, url_prefix=APP_PATH)
 
 
 def fetch_data():
-    VAL_DEF = {
-        "temp": "mean",
-        "ph": "mean_1",
-        "tds": "mean_2",
-        "do": "mean_3",
-        "flow": "mean_4",
-    }
+    VAL_LIST = ["temp", "ph", "tds", "do", "flow", "time"]
     val_map = {}
 
-    client = InfluxDBClient(
-        host=INFLUXDB_ADDR, port=INFLUXDB_PORT, database=INFLUXDB_DB
+    client = influxdb_client.InfluxDBClient(
+        url=INFLUXDB_URL, token=INFLUXDB_TOKEN, org=INFLUXDB_ORG
     )
-    result = client.query(INFLUXDB_QUERY)
 
-    for k, v in VAL_DEF.items():
-        val_map[k] = list(map(lambda x: x[v], result.get_points()))
+    query_api = client.query_api()
+
+    query = """from(bucket: "sensor")
+        |> range(start: -120m)
+        |> filter(fn:(r) => r._measurement == "sensor.rasp")
+        |> filter(fn: (r) => r.hostname == "rasp-aqua")
+        |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)
+        |> exponentialMovingAverage(n: 3)
+    """
+
+    table_list = query_api.query(query=query)
+    val_map = {key: [] for key in VAL_LIST}
+
+    for table in table_list:
+        for record in table.records:
+            if record.get_field() in VAL_LIST:
+                val_map[record.get_field()].append(record.get_value())
 
     localtime_offset = datetime.timedelta(hours=9)
-    val_map["time"] = list(
-        map(
-            lambda x: dateutil.parser.parse(x["time"]) + localtime_offset,
-            result.get_points(),
-        )
-    )
+    for record in table_list[0].records:
+        val_map["time"].append(record.get_time() + localtime_offset)
 
     return val_map
 
