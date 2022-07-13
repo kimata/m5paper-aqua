@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 import influxdb_client
 import datetime
-import dateutil.parser
 import io
 import matplotlib
 import numpy as np
@@ -16,12 +15,7 @@ import PIL.ImageDraw
 import PIL.ImageFont
 
 from flask import (
-    request,
-    jsonify,
-    current_app,
     Response,
-    send_from_directory,
-    after_this_request,
     Blueprint,
 )
 
@@ -123,7 +117,6 @@ def plot_data(fig, ax, font, title, x, y, ylabel, yticks, fmt, normal, is_last=F
     ax.plot(
         x,
         y,
-        ".",
         color="#999999",
         marker="o",
         markevery=[len(y) - 1],
@@ -309,7 +302,7 @@ def png2raw4(png_data):
     for y in range(0, h):
         for x in range(0, w, 2):
             # NOTE: 輝度を反転した上で 4bit に変換し，隣接画素を 1Byte にパッキング
-            c = int((0xFF - img[y][x]) / 16) << 4 | int((0xFF - img[y][x + 1]) / 16)
+            c = (((0xFF - img[y][x]) >> 4) & 0xF) << 4 | ((0xFF - img[y][x + 1]) >> 4)
             raw4_buf.append(c)
 
     return struct.pack("B" * len(raw4_buf), *raw4_buf)
