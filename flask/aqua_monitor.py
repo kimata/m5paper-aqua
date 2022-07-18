@@ -54,7 +54,7 @@ def fetch_data():
     query_api = client.query_api()
 
     query = """from(bucket: "sensor")
-        |> range(start: -2d)
+        |> range(start: -50h)
         |> filter(fn:(r) => r._measurement == "sensor.rasp")
         |> filter(fn: (r) => r.hostname == "rasp-aqua")
         |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)
@@ -87,8 +87,8 @@ def plot_font():
         "sup_title": get_plot_font(FONT_BOLD_PATH, 30),
         "title": get_plot_font(FONT_REGULAR_PATH, 24),
         "value": get_plot_font(FONT_BOLD_PATH, 80),
-        "axis": get_plot_font(FONT_REGULAR_PATH, 14),
-        "date": get_plot_font(FONT_REGULAR_PATH, 12),
+        "axis_major": get_plot_font(FONT_REGULAR_PATH, 28),
+        "axis_minor": get_plot_font(FONT_REGULAR_PATH, 20),
         "alert": get_plot_font(FONT_BOLD_PATH, 140),
     }
 
@@ -104,7 +104,7 @@ def pil_font():
     return {
         "title": get_pil_font(FONT_BOLD_PATH, 100),
         "text": get_pil_font(FONT_REGULAR_PATH, 24),
-        "date": get_pil_font(FONT_REGULAR_PATH, 12),
+        "date": get_pil_font(FONT_REGULAR_PATH, 24),
     }
 
 
@@ -152,10 +152,16 @@ def plot_data(fig, ax, font, title, x, y, ylabel, yticks, fmt, normal, is_last=F
         )
 
     ax.set_ylabel(ylabel)
-    for label in ax.get_yticklabels() + ax.get_xticklabels():
-        label.set_font_properties(font["axis"])
-    # ax.xaxis.set_major_formatter(mdates.DateFormatter('%-m/%-d\n%a'))
-    ax.xaxis.set_major_formatter(mdates.DateFormatter("%-m/%-d\n%-H:%M"))
+
+    ax.xaxis.set_minor_locator(mdates.HourLocator(byhour=range(0, 24, 6)))
+    ax.xaxis.set_minor_formatter(mdates.DateFormatter("\n%-H"))
+    ax.xaxis.set_major_locator(mdates.DayLocator(interval=1))
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%-d"))
+
+    for label in ax.get_xticklabels():
+        label.set_fontproperties(font["axis_major"])
+    for label in ax.get_xminorticklabels():
+        label.set_fontproperties(font["axis_minor"])
 
     ax.grid(axis="x", color="#000000", alpha=0.1, linestyle="-", linewidth=1)
     ax.label_outer()
@@ -183,7 +189,7 @@ def create_plot_impl(data):
             "title": "Total Dissolved Solids",
             "param": "tds",
             "unit": "ppm",
-            "yticks": [300, 410, 20],
+            "yticks": [300, 455, 30],
             "normal": [100, 600],
             "fmt": "{:.0f}",
         },
@@ -210,7 +216,7 @@ def create_plot_impl(data):
 
     fig = plt.figure(1)
     fig.set_size_inches(
-        PANEL["SIZE"]["WIDTH"] / IMAGE_DPI, PANEL["SIZE"]["HEIGHT"] / IMAGE_DPI
+        PANEL["SIZE"]["WIDTH"] / IMAGE_DPI, (PANEL["SIZE"]["HEIGHT"] - 20) / IMAGE_DPI
     )
 
     for i in range(0, len(PLOT_CONFIG)):
@@ -278,14 +284,26 @@ def create_error_msg(e):
 
 
 def create_plot():
+    img = PIL.Image.new(
+        "RGBA",
+        (PANEL["SIZE"]["WIDTH"], PANEL["SIZE"]["HEIGHT"]),
+        (255, 255, 255, 255),
+    )
+
     try:
         png_data = create_plot_impl(fetch_data())
     except Exception as e:
         png_data = create_error_msg(e)
 
-    img = PIL.Image.open(io.BytesIO(png_data))
-    date = datetime.datetime.now().strftime("%Y/%m/%d %H:%M")
-    draw_text(img, date, (455, 948), "date", align=True, color="#333")
+    graph_img = PIL.Image.open(io.BytesIO(png_data))
+
+    img.paste(
+        graph_img,
+        (0, 0),
+    )
+
+    date = datetime.datetime.now().strftime("Update: %H:%M")
+    draw_text(img, date, (390, 935), "date", align=True, color="#666")
 
     bytes_io = io.BytesIO()
     img.save(bytes_io, "PNG")
