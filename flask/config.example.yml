@@ -1,0 +1,66 @@
+PANEL:
+  DEVICE:
+    WIDTH: 1072
+    HEIGHT: 1448
+
+INFLUXDB:
+  URL: http://tanzania.green-rabbit.net:8086
+  TOKEN: fffjkjkgfklhjglkjiojtroijojhkljhklghklfjklhhlnklhnklfgnhklgnhgfdlhfgnhlkngdfnfnhgdkfnh==
+  ORG: home
+  BUCKET: sensor
+
+GRAPH:
+  PARAM_LIST:
+    - TITLE: Temperature
+      PARAM: temp
+      FORMAT: "{:.1f}"
+      UNIT: Celsius
+      YTICKS:
+        MIN: 24
+        MAX: 28.1
+        STEP: 1
+      NORMAL:
+        MIN: 25.0
+        MAX: 27.5
+
+    - TITLE: pH
+      PARAM: ph
+      FORMAT: "{:.1f}"
+      UNIT: pH
+      YTICKS:
+        MIN: 6.0
+        MAX: 7.6
+        STEP: 0.5
+      NORMAL:
+        MIN: 6.0
+        MAX: 7.5
+
+    - TITLE: Total Dissolved Solids
+      PARAM: tds
+      FORMAT: "{:.0f}"
+      UNIT: ppm
+      YTICKS:
+        MIN: 300
+        MAX: 455
+        STEP: 30
+      NORMAL:
+        MIN: 100
+        MAX: 600
+
+    - TITLE: Water flow
+      PARAM: flow
+      FORMAT: "{:.1f}"
+      UNIT: "L/min"
+      YTICKS:
+        MIN: 0
+        MAX: 7.1
+        STEP: 1
+      NORMAL:
+        MIN: 3
+        MAX: 10
+
+FONT:
+  PATH: ./font/ # スクリプトのフォルダからの相対パス
+  MAP:
+    EN_MEDIUM: OptimaLTStd-Medium.otf
+    EN_BOLD: OptimaLTStd-Bold.otf

@@ -10,6 +10,7 @@ import os
 import pathlib
 import cv2
 import sys
+import yaml
 import textwrap
 import PIL.Image
 import PIL.ImageDraw
@@ -36,13 +37,17 @@ INFLUXDB_URL = "http://tanzania.green-rabbit.net:8086"
 INFLUXDB_TOKEN = "CyKJaJX8Ze808NqDWOiB9-SwOyfmx8j13srUgBofBsU6EZIMvppbsYNTnTJ_umVyX3QVJomFYLkskTVikfvYiw=="
 INFLUXDB_ORG = "home"
 
-FONT_REGULAR_PATH = "font/OptimaLTStd-Medium.otf"
-FONT_BOLD_PATH = "font/OptimaLTStd-Bold.otf"
 IMAGE_DPI = 100.0
 
 APP_PATH = "/aqua-monitor"
 
-aqua_monitor = Blueprint("aqua-monitor", __name__, url_prefix=APP_PATH)
+CONFIG_PATH = "config.yml"
+
+
+def load_config():
+    path = str(pathlib.Path(os.path.dirname(__file__), CONFIG_PATH))
+    with open(path, "r") as file:
+        return yaml.load(file, Loader=yaml.SafeLoader)
 
 
 def fetch_data():
@@ -78,35 +83,44 @@ def fetch_data():
     return val_map
 
 
-def get_plot_font(path, size):
+def get_plot_font(config, font_type, size):
     return FontProperties(
-        fname=str(pathlib.Path(os.path.dirname(__file__), path)), size=size
+        fname=str(
+            pathlib.Path(
+                os.path.dirname(__file__), config["PATH"], config["MAP"][font_type]
+            )
+        ),
+        size=size,
     )
 
 
-def plot_font():
+def plot_font(config):
     return {
-        "sup_title": get_plot_font(FONT_BOLD_PATH, 30),
-        "title": get_plot_font(FONT_REGULAR_PATH, 24),
-        "value": get_plot_font(FONT_BOLD_PATH, 80),
-        "axis_major": get_plot_font(FONT_REGULAR_PATH, 28),
-        "axis_minor": get_plot_font(FONT_REGULAR_PATH, 20),
-        "alert": get_plot_font(FONT_BOLD_PATH, 140),
+        "sup_title": get_plot_font(config, "EN_BOLD", 30),
+        "title": get_plot_font(config, "EN_MEDIUM", 24),
+        "value": get_plot_font(config, "EN_BOLD", 80),
+        "axis_major": get_plot_font(config, "EN_MEDIUM", 28),
+        "axis_minor": get_plot_font(config, "EN_MEDIUM", 20),
+        "alert": get_plot_font(config, "EN_BOLD", 140),
     }
 
 
-def get_pil_font(path, size):
-    font = PIL.ImageFont.truetype(
-        str(pathlib.Path(os.path.dirname(__file__), path)), size
+def get_pil_font(config, font_type, size):
+    return PIL.ImageFont.truetype(
+        str(
+            pathlib.Path(
+                os.path.dirname(__file__), config["PATH"], config["MAP"][font_type]
+            )
+        ),
+        size,
     )
-    return font
 
 
-def pil_font():
+def pil_font(config):
     return {
-        "title": get_pil_font(FONT_BOLD_PATH, 100),
-        "text": get_pil_font(FONT_REGULAR_PATH, 20),
-        "date": get_pil_font(FONT_REGULAR_PATH, 24),
+        "title": get_pil_font(config, "EN_BOLD", 100),
+        "text": get_pil_font(config, "EN_MEDIUM", 20),
+        "date": get_pil_font(config, "EN_MEDIUM", 24),
     }
 
 
@@ -169,72 +183,38 @@ def plot_data(fig, ax, font, title, x, y, ylabel, yticks, fmt, normal, is_last=F
     ax.label_outer()
 
 
-def create_plot_impl(data):
-    PLOT_CONFIG = [
-        {
-            "title": "Temperature",
-            "param": "temp",
-            "unit": "Celsius",
-            "yticks": [24, 28.1, 1],
-            "normal": [25.0, 27.5],
-            "fmt": "{:.1f}",
-        },
-        {
-            "title": "pH",
-            "param": "ph",
-            "unit": "pH",
-            "yticks": [6.0, 7.6, 0.5],
-            "normal": [6.0, 7.5],
-            "fmt": "{:.1f}",
-        },
-        {
-            "title": "Total Dissolved Solids",
-            "param": "tds",
-            "unit": "ppm",
-            "yticks": [300, 455, 30],
-            "normal": [100, 600],
-            "fmt": "{:.0f}",
-        },
-        # { 'title':'Dissolved Oxygen',
-        #   'param': 'do',
-        #   'unit': 'mg/L',
-        #   'yticks': [0, 6, 1],
-        #   'fmt': '{:.1f}'
-        # },
-        {
-            "title": "Water flow",
-            "param": "flow",
-            "unit": "L/min",
-            "yticks": [0, 7.1, 1],
-            "normal": [3, 10],
-            "fmt": "{:.1f}",
-        },
-    ]
-
+def create_plot_impl(config, data):
     plt.style.use("grayscale")
     plt.subplots_adjust(hspace=0.35)
 
-    font = plot_font()
+    font = plot_font(config["FONT"])
 
     fig = plt.figure(1)
     fig.set_size_inches(
         PANEL["SIZE"]["WIDTH"] / IMAGE_DPI, (PANEL["SIZE"]["HEIGHT"] - 20) / IMAGE_DPI
     )
 
-    for i in range(0, len(PLOT_CONFIG)):
-        ax = fig.add_subplot(len(PLOT_CONFIG), 1, i + 1)
+    for i, param in enumerate(config["GRAPH"]["PARAM_LIST"]):
+        ax = fig.add_subplot(len(config["GRAPH"]["PARAM_LIST"]), 1, i + 1)
         plot_data(
             fig,
             ax,
             font,
-            PLOT_CONFIG[i]["title"],
+            param["TITLE"],
             data["time"],
-            data[PLOT_CONFIG[i]["param"]],
-            PLOT_CONFIG[i]["unit"],
-            PLOT_CONFIG[i]["yticks"],
-            PLOT_CONFIG[i]["fmt"],
-            PLOT_CONFIG[i]["normal"],
-            i == (len(PLOT_CONFIG) - 1),
+            data[param["PARAM"]],
+            param["UNIT"],
+            [
+                param["YTICKS"]["MIN"],
+                param["YTICKS"]["MAX"],
+                param["YTICKS"]["STEP"],
+            ],
+            param["FORMAT"],
+            [
+                param["NORMAL"]["MIN"],
+                param["NORMAL"]["MAX"],
+            ],
+            i == (len(config["GRAPH"]["PARAM_LIST"]) - 1),
         )
 
     fig.tight_layout()
@@ -251,9 +231,8 @@ def create_plot_impl(data):
     return png_data
 
 
-def draw_text(img, text, pos, face, align=True, color="#000"):
+def draw_text(img, text, pos, font, align=True, color="#000"):
     draw = PIL.ImageDraw.Draw(img)
-    font = pil_font()[face]
     next_pos_y = pos[1] + font.getsize(text)[1]
 
     if align:
@@ -268,12 +247,15 @@ def draw_text(img, text, pos, face, align=True, color="#000"):
     return next_pos_y
 
 
-def create_error_msg(e):
+def create_error_msg(config, e):
     img = PIL.Image.new("L", (PANEL["SIZE"]["WIDTH"], PANEL["SIZE"]["HEIGHT"]), "#FFF")
 
-    draw_text(img, "ERROR", (20, 20), "title")
+    draw_text(img, "ERROR", (20, 20), pil_font(config["FONT"])["title"])
     draw_text(
-        img, "\n".join(textwrap.wrap(traceback.format_exc(), 50)), (20, 120), "text"
+        img,
+        "\n".join(textwrap.wrap(traceback.format_exc(), 50)),
+        (20, 120),
+        pil_font(config["FONT"])["text"],
     )
 
     bytes_io = io.BytesIO()
@@ -284,6 +266,8 @@ def create_error_msg(e):
 
 
 def create_plot():
+    config = load_config()
+
     img = PIL.Image.new(
         "RGBA",
         (PANEL["SIZE"]["WIDTH"], PANEL["SIZE"]["HEIGHT"]),
@@ -291,10 +275,10 @@ def create_plot():
     )
 
     try:
-        png_data = create_plot_impl(fetch_data())
+        png_data = create_plot_impl(config, fetch_data())
     except Exception as e:
         print(traceback.format_exc(), file=sys.stderr)
-        png_data = create_error_msg(e)
+        png_data = create_error_msg(config, e)
 
     graph_img = PIL.Image.open(io.BytesIO(png_data))
 
@@ -304,7 +288,14 @@ def create_plot():
     )
 
     date = datetime.datetime.now().strftime("Update: %H:%M")
-    draw_text(img, date, (390, 935), "date", align=True, color="#666")
+    draw_text(
+        img,
+        date,
+        (390, 935),
+        pil_font(config["FONT"])["date"],
+        align=True,
+        color="#666",
+    )
 
     bytes_io = io.BytesIO()
     img.save(bytes_io, "PNG")
@@ -325,6 +316,9 @@ def png2raw4(png_data):
             raw4_buf.append(c)
 
     return struct.pack("B" * len(raw4_buf), *raw4_buf)
+
+
+aqua_monitor = Blueprint("aqua-monitor", __name__, url_prefix=APP_PATH)
 
 
 @aqua_monitor.route("/", methods=["GET"])
