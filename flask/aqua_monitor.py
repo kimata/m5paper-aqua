@@ -9,10 +9,12 @@ import struct
 import os
 import pathlib
 import cv2
+import sys
 import textwrap
 import PIL.Image
 import PIL.ImageDraw
 import PIL.ImageFont
+import traceback
 
 from flask import (
     Response,
@@ -103,7 +105,7 @@ def get_pil_font(path, size):
 def pil_font():
     return {
         "title": get_pil_font(FONT_BOLD_PATH, 100),
-        "text": get_pil_font(FONT_REGULAR_PATH, 24),
+        "text": get_pil_font(FONT_REGULAR_PATH, 20),
         "date": get_pil_font(FONT_REGULAR_PATH, 24),
     }
 
@@ -267,13 +269,11 @@ def draw_text(img, text, pos, face, align=True, color="#000"):
 
 
 def create_error_msg(e):
-    import traceback
-
     img = PIL.Image.new("L", (PANEL["SIZE"]["WIDTH"], PANEL["SIZE"]["HEIGHT"]), "#FFF")
 
     draw_text(img, "ERROR", (20, 20), "title")
     draw_text(
-        img, "\n".join(textwrap.wrap(traceback.format_exc(), 45)), (20, 120), "text"
+        img, "\n".join(textwrap.wrap(traceback.format_exc(), 50)), (20, 120), "text"
     )
 
     bytes_io = io.BytesIO()
@@ -293,6 +293,7 @@ def create_plot():
     try:
         png_data = create_plot_impl(fetch_data())
     except Exception as e:
+        print(traceback.format_exc(), file=sys.stderr)
         png_data = create_error_msg(e)
 
     graph_img = PIL.Image.open(io.BytesIO(png_data))
