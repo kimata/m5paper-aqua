@@ -1,18 +1,23 @@
 PANEL:
   DEVICE:
-    WIDTH: 1072
-    HEIGHT: 1448
+    WIDTH: 540
+    HEIGHT: 960
+    DPI: 100.0
 
 INFLUXDB:
-  URL: http://tanzania.green-rabbit.net:8086
+  URL: http://proxy.green-rabbit.net:8086
   TOKEN: fffjkjkgfklhjglkjiojtroijojhkljhklghklfjklhhlnklhnklfgnhklgnhgfdlhfgnhlkngdfnfnhgdkfnh==
   ORG: home
   BUCKET: sensor
 
+SENSOR:
+  HOSTNAME: rasp-aqua
+  TYPE: rasp
+
 GRAPH:
   PARAM_LIST:
-    - TITLE: Temperature
-      PARAM: temp
+    - NAME: temp
+      TITLE: Temperature
       FORMAT: "{:.1f}"
       UNIT: Celsius
       YTICKS:
@@ -23,8 +28,8 @@ GRAPH:
         MIN: 25.0
         MAX: 27.5
 
-    - TITLE: pH
-      PARAM: ph
+    - NAME: ph
+      TITLE: pH
       FORMAT: "{:.1f}"
       UNIT: pH
       YTICKS:
@@ -35,8 +40,8 @@ GRAPH:
         MIN: 6.0
         MAX: 7.5
 
-    - TITLE: Total Dissolved Solids
-      PARAM: tds
+    - NAME: tds
+      TITLE: Total Dissolved Solids
       FORMAT: "{:.0f}"
       UNIT: ppm
       YTICKS:
@@ -47,8 +52,8 @@ GRAPH:
         MIN: 100
         MAX: 600
 
-    - TITLE: Water flow
-      PARAM: flow
+    - NAME: flow
+      TITLE: Water flow
       FORMAT: "{:.1f}"
       UNIT: "L/min"
       YTICKS:
