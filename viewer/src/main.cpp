@@ -9,7 +9,7 @@
 
 #include "wifi_config.h"
 
-#define IMAGE_URL "http://192.168.0.18:5555/aqua-monitor/raw4"
+#define IMAGE_URL "http://192.168.0.20:5555/aqua-monitor/raw4"
 #define UPDATE_INTERVAL_SEC (60)
 #define NTP_SERVER "ntp.nict.jp"
 #define UTC_OFFSET (9 * 60 * 60)
