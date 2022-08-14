@@ -36,7 +36,7 @@ int draw_raw4(const char *url) {
     // NOTE:
     // 現状，raw4画像の生成を富豪的に行っており，サーバ側での処理に時間がかかるので
     // 長めにしておく．
-    http.setTimeout(10 * 1000);
+    http.setTimeout(60 * 1000);
 
     http.begin(url);
     int httpCode = http.GET();
