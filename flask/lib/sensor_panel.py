@@ -101,10 +101,10 @@ def create_panel(config):
     draw_text(
         img,
         date,
-        (390, 938),
+        (382, 930),
         pil_font(config["FONT"])["date"],
         align=True,
-        color="#333",
+        color="#555",
     )
 
     bytes_io = io.BytesIO()
