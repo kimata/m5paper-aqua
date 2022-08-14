@@ -18,7 +18,6 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "lib"))
 
 from config import load_config
 import sensor_panel
-import logger
 
 APP_PATH = "/aqua-monitor"
 
