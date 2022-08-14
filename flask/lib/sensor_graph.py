@@ -3,16 +3,12 @@
 
 import io
 import os
-import sys
 import pathlib
 import matplotlib
 import numpy as np
-import textwrap
-import traceback
 import datetime
 import PIL.Image
 import PIL.ImageFont
-import PIL.ImageDraw
 import logging
 
 matplotlib.use("Agg")
@@ -111,7 +107,7 @@ def plot_data(fig, ax, font, title, x, y, ylabel, yticks, fmt, normal, is_last=F
     ax.label_outer()
 
 
-def sensor_data(config):
+def get_graph_data(config):
     logging.info("fetch data")
 
     val_map = {}
@@ -123,8 +119,7 @@ def sensor_data(config):
             param["NAME"],
             period="60h",
         )
-        val_map[param["NAME"]] = data["value"]
-        val_map["time"] = data["time"]
+        val_map[param["NAME"]] = data
 
     return val_map
 
@@ -132,7 +127,7 @@ def sensor_data(config):
 def create_graph(config):
     logging.info("draw graph")
 
-    data = sensor_data(config)
+    data = get_graph_data(config)
 
     plt.style.use("grayscale")
     plt.subplots_adjust(hspace=0.35)
@@ -153,8 +148,8 @@ def create_graph(config):
             ax,
             font,
             param["TITLE"],
-            data["time"],
-            data[param["NAME"]],
+            data[param["NAME"]]["time"],
+            data[param["NAME"]]["value"],
             param["UNIT"],
             [
                 param["YTICKS"]["MIN"],
