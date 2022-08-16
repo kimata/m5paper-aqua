@@ -6,6 +6,7 @@ import struct
 import os
 import cv2
 import sys
+import logging
 
 from flask import (
     Response,
@@ -42,18 +43,24 @@ aqua_monitor = Blueprint("aqua-monitor", __name__, url_prefix=APP_PATH)
 @aqua_monitor.route("/", methods=["GET"])
 @aqua_monitor.route("/png", methods=["GET"])
 def img_png():
+    logging.info("request: png")
+
     res = Response(sensor_panel.create_panel(load_config()), mimetype="image/png")
     res.headers.add("Cache-Control", "no-cache")
 
+    logging.info("Finish")
     return res
 
 
 @aqua_monitor.route("/raw4", methods=["GET"])
 def img_raw4():
+    logging.info("request: raw4")
+
     res = Response(
         png2raw4(sensor_panel.create_panel(load_config())),
         mimetype="application/octet-stream",
     )
     res.headers.add("Cache-Control", "no-cache")
 
+    logging.info("Finish")
     return res
