@@ -49,6 +49,7 @@ def plot_font(config):
 
 
 def plot_data(fig, ax, font, title, x, y, ylabel, yticks, fmt, normal, is_last=False):
+    logging.info("plot graph: {title}".format(title=title))
     ax.set_title(title, fontproperties=font["title"])
     ax.set_ylim(yticks[0:2])
     ax.set_yticks(np.arange(*yticks))
