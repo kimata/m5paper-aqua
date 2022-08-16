@@ -7,8 +7,6 @@ import pathlib
 import matplotlib
 import numpy as np
 import datetime
-import PIL.Image
-import PIL.ImageFont
 import logging
 
 matplotlib.use("Agg")
