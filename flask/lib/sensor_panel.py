@@ -55,6 +55,8 @@ def draw_text(img, text, pos, font, align=True, color="#000"):
 
 
 def create_error_msg(config, e):
+    logging.error(traceback.format_exc())
+
     img = PIL.Image.new(
         "L",
         (config["PANEL"]["DEVICE"]["WIDTH"], config["PANEL"]["DEVICE"]["HEIGHT"]),
