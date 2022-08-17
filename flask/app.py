@@ -16,4 +16,4 @@ app.register_blueprint(aqua_monitor)
 if __name__ == "__main__":
     logger.init("panel.m5paper.aqua")
     app.debug = True
-    app.run(host="0.0.0.0", port=5555, threaded=True)
+    app.run(host="0.0.0.0", port=5555, threaded=False)
