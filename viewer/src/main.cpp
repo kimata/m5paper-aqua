@@ -14,8 +14,6 @@
 #define NTP_SERVER "ntp.nict.jp"
 #define UTC_OFFSET (9 * 60 * 60)
 
-M5EPD_Canvas canvas(&M5.EPD);
-
 static const int DISP_WIDTH = 540;
 static const int DISP_HEIGHT = 960;
 static const int BUF_HEIGHT = 20;
@@ -26,7 +24,7 @@ RTC_DATA_ATTR int draw_count = 0;
 // NOTE: バッテリ駆動する場合は，次のコメントアウトを解除する
 // #define USE_BATTERY
 
-int draw_raw4(const char *url) {
+int draw_raw4(M5EPD_Canvas *canvas, const char *url) {
     int filled;
     int len;
     int block;
@@ -62,8 +60,8 @@ int draw_raw4(const char *url) {
         if ((len = stream->readBytes(buf + filled, size)) > 0) {
             filled += len;
             if (filled == sizeof(buf)) {
-                canvas.pushImage(0, BUF_HEIGHT * block, DISP_WIDTH, BUF_HEIGHT,
-                                 buf);
+                canvas->pushImage(0, BUF_HEIGHT * block, DISP_WIDTH, BUF_HEIGHT,
+                                  buf);
                 block++;
                 filled = 0;
             }
@@ -79,7 +77,7 @@ int draw_raw4(const char *url) {
     return 0;
 }
 
-int draw_battery() {
+int draw_battery(M5EPD_Canvas *canvas) {
     char buf[32];
     uint32_t vol = M5.getBatteryVoltage();
 
@@ -97,8 +95,8 @@ int draw_battery() {
     }
 
     snprintf(buf, sizeof(buf), "%.2fV (%d%%)", vol / 1000.0, (int)(rate * 100));
-    canvas.setTextSize(1);
-    canvas.drawString(buf, 5, 945);
+    canvas->setTextSize(1);
+    canvas->drawString(buf, 5, 945);
 
     return 0;
 }
@@ -167,14 +165,16 @@ void loop() {
     M5.enableEPDPower();
     M5.EPD.SetRotation(90);
 
+    M5EPD_Canvas canvas(&M5.EPD);
+
     canvas.createCanvas(540, 960);
 
     log_i("Fetch image");
-    if (draw_raw4(IMAGE_URL) != 0) {
+    if (draw_raw4(&canvas, IMAGE_URL) != 0) {
         log_e("Failed to fetch image");
         goto_sleep(1);
     }
-    draw_battery();
+    draw_battery(&canvas);
 
     log_i("Update display");
     M5.EPD.Clear(true);
