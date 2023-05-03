@@ -12,7 +12,7 @@ RUN apt-get install -y python3-pil python3-matplotlib python3-pandas
 RUN apt-get install -y python3-opencv
 RUN apt-get install -y python3-flask
 
-WORKDIR /opt/aquar_panel
+WORKDIR /opt/aqua_panel
 
 COPY requirements.txt .
 RUN pip3 install -r requirements.txt
