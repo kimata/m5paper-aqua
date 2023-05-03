@@ -21,23 +21,23 @@ GRAPH:
       FORMAT: "{:.1f}"
       UNIT: Celsius
       YTICKS:
-        MIN: 24
+        MIN: 23
         MAX: 28.1
-        STEP: 1
+        STEP: 2
       NORMAL:
-        MIN: 25.0
+        MIN: 23.5
         MAX: 27.5
 
     - NAME: ph
       TITLE: pH
-      FORMAT: "{:.1f}"
+      FORMAT: "{:.2f}"
       UNIT: pH
       YTICKS:
         MIN: 6.0
         MAX: 7.6
         STEP: 0.5
       NORMAL:
-        MIN: 6.0
+        MIN: 6.2
         MAX: 7.5
 
     - NAME: tds
@@ -46,22 +46,22 @@ GRAPH:
       UNIT: ppm
       YTICKS:
         MIN: 300
-        MAX: 455
-        STEP: 30
+        MAX: 700
+        STEP: 100
       NORMAL:
         MIN: 100
-        MAX: 600
+        MAX: 500
 
     - NAME: flow
       TITLE: Water flow
-      FORMAT: "{:.1f}"
+      FORMAT: "{:.2f}"
       UNIT: "L/min"
       YTICKS:
         MIN: 0
-        MAX: 7.1
+        MAX: 4.5
         STEP: 1
       NORMAL:
-        MIN: 3
+        MIN: 1.5
         MAX: 10
 
 FONT:
