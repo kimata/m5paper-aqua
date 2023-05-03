@@ -69,3 +69,7 @@ FONT:
   MAP:
     EN_MEDIUM: OptimaLTStd-Medium.otf
     EN_BOLD: OptimaLTStd-Bold.otf
+
+LIVENESS:
+  FILE: /dev/shm/healthz
+  INTERVAL: 300
