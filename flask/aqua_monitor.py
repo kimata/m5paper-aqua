@@ -67,8 +67,6 @@ def img_png():
     res = Response(create_panel(config), mimetype="image/png")
     res.headers.add("Cache-Control", "no-cache")
 
-    pathlib.Path(config["LIVENESS"]["FILE"]).touch()
-
     logging.info("Finish")
     return res
 
