@@ -3,6 +3,8 @@ PANEL:
     WIDTH: 540
     HEIGHT: 960
     DPI: 100.0
+  UPDATE:
+    INTERVAL: 60
 
 INFLUXDB:
   URL: http://proxy.green-rabbit.net:8086
