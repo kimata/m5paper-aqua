@@ -49,7 +49,6 @@ def create_panel(config):
                 config["SLACK"]["BOT_TOKEN"],
                 config["SLACK"]["ERROR"]["CHANNEL"],
                 traceback.format_exc(),
-                "エラー",
                 config["SLACK"]["ERROR"]["INTERVAL_MIN"],
             )
         raise

@@ -35,7 +35,7 @@ ERROR_TMPL = """\
 """
 
 
-def error_impl(token, channel, message, title):
+def send(token, channel, message, title):
     client = WebClient(token=token)
 
     json_message = ERROR_TMPL.format(title=title, message=json.dumps(message))
@@ -61,18 +61,16 @@ def error(token, channel, message, title="エラー", interval_min=10):
         logging.info("skip slack nofity")
         return
 
-    error_impl(token, channel, message, title)
+    send(token, channel, message, title)
     ERROR_NOTIFY_FOOTPRINT.parent.mkdir(parents=True, exist_ok=True)
     ERROR_NOTIFY_FOOTPRINT.touch()
 
-
-logging.getLogger("urllib3").setLevel(level=logging.WARNING)
 
 if __name__ == "__main__":
     import logger
     from config import load_config
 
-    logger.init("test", level=logging.DEBUG)
+    logger.init("test", level=logging.WARNING)
     logging.info("Test")
 
     config = load_config()
