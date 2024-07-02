@@ -12,9 +12,11 @@ RUN apt-get install -y python3-pil python3-matplotlib python3-pandas
 RUN apt-get install -y python3-opencv
 RUN apt-get install -y python3-flask
 
-RUN pip3 install 'influxdb-client[ciso]'
+WORKDIR /opt/aqua_panel
 
-WORKDIR /opt/aquar_panel
+COPY requirements.txt .
+RUN pip3 install -r requirements.txt
+
 COPY . .
 
 CMD ["./app.py"]

@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import matplotlib
+import pathlib
 import numpy as np
 import struct
 import os
 import cv2
 import sys
+import traceback
 import logging
 
 from flask import (
@@ -19,6 +21,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "lib"))
 
 from config import load_config
 import sensor_panel
+import notify_slack
 
 APP_PATH = "/aqua-monitor"
 
@@ -37,6 +40,20 @@ def png2raw4(png_data):
     return struct.pack("B" * len(raw4_buf), *raw4_buf)
 
 
+def create_panel(config):
+    try:
+        return sensor_panel.create_panel(config)
+    except:
+        if "SLACK" in config:
+            notify_slack.error(
+                config["SLACK"]["BOT_TOKEN"],
+                config["SLACK"]["ERROR"]["CHANNEL"],
+                traceback.format_exc(),
+                config["SLACK"]["ERROR"]["INTERVAL_MIN"],
+            )
+        raise
+
+
 aqua_monitor = Blueprint("aqua-monitor", __name__, url_prefix=APP_PATH)
 
 
@@ -45,7 +62,8 @@ aqua_monitor = Blueprint("aqua-monitor", __name__, url_prefix=APP_PATH)
 def img_png():
     logging.info("request: png")
 
-    res = Response(sensor_panel.create_panel(load_config()), mimetype="image/png")
+    config = load_config()
+    res = Response(create_panel(config), mimetype="image/png")
     res.headers.add("Cache-Control", "no-cache")
 
     logging.info("Finish")
@@ -56,11 +74,14 @@ def img_png():
 def img_raw4():
     logging.info("request: raw4")
 
+    config = load_config()
     res = Response(
-        png2raw4(sensor_panel.create_panel(load_config())),
+        png2raw4(create_panel(config)),
         mimetype="application/octet-stream",
     )
     res.headers.add("Cache-Control", "no-cache")
+
+    pathlib.Path(config["LIVENESS"]["FILE"]).touch()
 
     logging.info("Finish")
     return res
