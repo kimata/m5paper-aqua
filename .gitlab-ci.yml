@@ -1,0 +1,53 @@
+mouimage: docker:24.0.9
+
+stages:
+    - build-image
+    - deploy
+    - renovate
+
+build-image:
+    stage: build-image
+
+    image: registry.green-rabbit.net:5000/kimata/local_ubuntu:240224B
+
+    script:
+        # - docker rm $(docker ps -a --filter 'status=exited' -q) || true
+        - export GIT_SSL_NO_VERIFY=1
+        - cd flask
+        - git clone https://gitlab.green-rabbit.net/kimata/panel_config.git
+        - mv panel_config/m5paper-aqua.yaml config.yaml
+        - git clone https://gitlab.green-rabbit.net/kimata/font.git private_font
+        - mv private_font/* font
+        - docker pull ${CI_REGISTRY_IMAGE} || true
+        - docker build . -t ${CI_REGISTRY_IMAGE}
+        - docker push ${CI_REGISTRY_IMAGE}
+
+# deploy:
+#     stage: deploy
+
+#     image:
+#         name: bitnami/kubectl:latest
+#         entrypoint: [""]
+#     script:
+#         - kubectl config get-contexts
+#         - kubectl config use-context kimata/e-ink_weather_panel:pod-rollout
+#         - kubectl --insecure-skip-tls-verify=true rollout restart -n panel deployment e-ink-weather-panel-deployment
+#         - kubectl --insecure-skip-tls-verify=true rollout restart -n panel deployment e-ink-weather-small-panel-deployment
+#         - kubectl --insecure-skip-tls-verify=true rollout restart -n panel deployment e-ink-weather-webapp-deployment
+
+renovate:
+    stage: renovate
+    image:
+        name: registry.green-rabbit.net:5000/kimata/local_renovate:36
+
+        entrypoint: [""]
+    script:
+        - renovate --platform gitlab --token ${RENOVATE_TOKEN} --endpoint ${CI_SERVER_URL}/api/v4 ${CI_PROJECT_PATH}
+        # # NOTE: ついでにお掃除
+        #  - docker rm $(docker ps -a --filter "status=exited" -q) || true
+    rules:
+        - if: '$CI_COMMIT_BRANCH != "master"'
+          when: never
+        - if: '$CI_PIPELINE_SOURCE == "schedule"'
+        - changes:
+              - renovate.json
